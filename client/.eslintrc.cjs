@@ -1,23 +1,21 @@
 module.exports = {
-  env: {
-    browser: true,
-    es2021: true,
-    node: true
-  },
-  extends: ['plugin:react/recommended', 'standard', 'plugin:prettier/recommended', 'eslint-config-prettier'],
-  overrides: [],
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true
-    },
-    ecmaVersion: 'latest',
-    sourceType: 'module'
-  },
-  plugins: ['react', 'prettier', 'react-hooks'],
+  root: true,
+  env: { browser: true, es2020: true },
+  extends: [
+    'eslint:recommended',
+    'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
+    'plugin:react-hooks/recommended',
+  ],
+  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+  settings: { react: { version: '18.2' } },
+  plugins: ['react-refresh'],
   rules: {
-    semi: ['error', 'always'],
-    'react/react-in-jsx-scope': 'off',
-    'react-hooks/rules-of-hooks': 'error', // For checking rules of hooks
-    'react-hooks/exhaustive-deps': 'warn' // For checking hook dependencies
-  }
-};
+    'react/jsx-no-target-blank': 'off',
+    'react-refresh/only-export-components': [
+      'warn',
+      { allowConstantExport: true },
+    ],
+  },
+}

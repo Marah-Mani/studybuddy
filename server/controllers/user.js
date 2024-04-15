@@ -1,213 +1,242 @@
-const User = require("../model/User");
-const Room = require("../model/Room");
-const Message = require("../model/Message");
-const asyncHandler = require("express-async-handler");
+import { compare } from "bcrypt";
+import { NEW_REQUEST, REFETCH_CHATS } from "../constants/events.js";
+import { getOtherMember } from "../lib/helper.js";
+import { TryCatch } from "../middlewares/error.js";
+import { Chat } from "../models/chat.js";
+import { Request } from "../models/request.js";
+import { User } from "../models/user.js";
+import {
+  cookieOptions,
+  emitEvent,
+  sendToken,
+  uploadFilesToCloudinary,
+} from "../utils/features.js";
+import { ErrorHandler } from "../utils/utility.js";
 
-const getUnreadCount = asyncHandler(async (type, from, to) => {
-  const filter = type === "room" ? [to] : [from, to];
-  const messageReaders = await Message.find({ sender: { $ne: from } }) // sender 不是自己的訊息
-    .all("users", filter)
-    .select(["readers"])
-    .sort({ createdAt: -1 })
-    .lean();
+// Create a new user and save it to the database and save token in cookie
+const newUser = TryCatch(async (req, res, next) => {
+  const { name, username, password, bio } = req.body;
 
-  // readers 裡面沒有自己的 id
-  return (
-    messageReaders.filter(({ readers }) => readers.indexOf(from) === -1)
-      .length || 0
-  );
-});
+  const file = req.file;
 
-const getMessageInfo = asyncHandler(async (type, from, to) => {
-  const filter = type === "room" ? [to] : [from, to];
-  const message = await Message.findOne()
-    .all("users", filter)
-    .select(["message", "sender", "updatedAt", "readers"])
-    .sort({ createdAt: -1 })
-    .lean();
+  if (!file) return next(new ErrorHandler("Please Upload Avatar"));
 
-  const unreadCount = await getUnreadCount(type, from, to);
+  const result = await uploadFilesToCloudinary([file]);
 
-  return {
-    latestMessage: message?.message || null,
-    latestMessageSender: message?.sender || null,
-    latestMessageUpdatedAt: message?.updatedAt || null,
-    unreadCount,
+  const avatar = {
+    public_id: result[0].public_id,
+    url: result[0].url,
   };
+
+  const user = await User.create({
+    name,
+    bio,
+    username,
+    password,
+    avatar,
+  });
+
+  sendToken(res, user, 201, "User created");
 });
 
-// READ
-const getUserContacts = asyncHandler(async (req, res) => {
-  try {
-    const { userId } = req.params;
+// Login user and save token in cookie
+const login = TryCatch(async (req, res, next) => {
+  const { username, password } = req.body;
 
-    if (!userId)
-      return res.status(400).json({ message: "Missing required information." });
+  const user = await User.findOne({ username }).select("+password");
 
-    const users = await User.find({ _id: { $ne: userId } })
-      .select(["name", "avatarImage", "chatType"])
-      .sort({ updatedAt: -1 })
-      .lean();
+  if (!user) return next(new ErrorHandler("Invalid Username or Password", 404));
 
-    const rooms = await Room.find()
-      .all("users", [userId])
-      .select(["name", "users", "avatarImage", "chatType"])
-      .sort({ updatedAt: -1 })
-      .lean();
+  const isMatch = await compare(password, user.password);
 
-    const contacts = users.concat(rooms);
-    const contactWithMessages = await Promise.all(
-      contacts.map(async (contact) => {
-        const { _id, chatType: type } = contact;
-        const messageInfo = await getMessageInfo(
-          type,
-          userId,
-          _id.toHexString()
-        );
+  if (!isMatch)
+    return next(new ErrorHandler("Invalid Username or Password", 404));
 
-        return {
-          ...contact,
-          ...messageInfo,
-        };
-      })
+  sendToken(res, user, 200, `Welcome Back, ${user.name}`);
+});
+
+const getMyProfile = TryCatch(async (req, res, next) => {
+  const user = await User.findById(req.user);
+
+  if (!user) return next(new ErrorHandler("User not found", 404));
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+const logout = TryCatch(async (req, res) => {
+  return res
+    .status(200)
+    .cookie("studdybuddy-token", "", { ...cookieOptions, maxAge: 0 })
+    .json({
+      success: true,
+      message: "Logged out successfully",
+    });
+});
+
+const searchUser = TryCatch(async (req, res) => {
+  const { name = "" } = req.query;
+
+  // Finding All my chats
+  const myChats = await Chat.find({ groupChat: false, members: req.user });
+
+  //  extracting All Users from my chats means friends or people I have chatted with
+  const allUsersFromMyChats = myChats.flatMap((chat) => chat.members);
+
+  // Finding all users except me and my friends
+  const allUsersExceptMeAndFriends = await User.find({
+    _id: { $nin: allUsersFromMyChats },
+    name: { $regex: name, $options: "i" },
+  });
+
+  // Modifying the response
+  const users = allUsersExceptMeAndFriends.map(({ _id, name, avatar }) => ({
+    _id,
+    name,
+    avatar: avatar.url,
+  }));
+
+  return res.status(200).json({
+    success: true,
+    users,
+  });
+});
+
+const sendFriendRequest = TryCatch(async (req, res, next) => {
+  const { userId } = req.body;
+
+  const request = await Request.findOne({
+    $or: [
+      { sender: req.user, receiver: userId },
+      { sender: userId, receiver: req.user },
+    ],
+  });
+
+  if (request) return next(new ErrorHandler("Request already sent", 400));
+
+  await Request.create({
+    sender: req.user,
+    receiver: userId,
+  });
+
+  emitEvent(req, NEW_REQUEST, [userId]);
+
+  return res.status(200).json({
+    success: true,
+    message: "Friend Request Sent",
+  });
+});
+
+const acceptFriendRequest = TryCatch(async (req, res, next) => {
+  const { requestId, accept } = req.body;
+
+  const request = await Request.findById(requestId)
+    .populate("sender", "name")
+    .populate("receiver", "name");
+
+  if (!request) return next(new ErrorHandler("Request not found", 404));
+
+  if (request.receiver._id.toString() !== req.user.toString())
+    return next(
+      new ErrorHandler("You are not authorized to accept this request", 401)
     );
 
-    return res.status(200).json({ data: contactWithMessages });
-  } catch (err) {
-    return res.status(404).json({ message: err.message });
+  if (!accept) {
+    await request.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: "Friend Request Rejected",
+    });
   }
+
+  const members = [request.sender._id, request.receiver._id];
+
+  await Promise.all([
+    Chat.create({
+      members,
+      name: `${request.sender.name}-${request.receiver.name}`,
+    }),
+    request.deleteOne(),
+  ]);
+
+  emitEvent(req, REFETCH_CHATS, members);
+
+  return res.status(200).json({
+    success: true,
+    message: "Friend Request Accepted",
+    senderId: request.sender._id,
+  });
 });
 
-const getUserMessages = asyncHandler(async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { type, chatId } = req.query;
+const getMyNotifications = TryCatch(async (req, res) => {
+  const requests = await Request.find({ receiver: req.user }).populate(
+    "sender",
+    "name avatar"
+  );
 
-    if (!userId || !type || !chatId) {
-      return res.status(400).json({ message: "Missing required information." });
-    }
+  const allRequests = requests.map(({ _id, sender }) => ({
+    _id,
+    sender: {
+      _id: sender._id,
+      name: sender.name,
+      avatar: sender.avatar.url,
+    },
+  }));
 
-    const filter = type === "room" ? [chatId] : [userId, chatId];
-    const messages = await Message.find()
-      .all("users", filter)
-      .sort({ createdAt: 1 })
-      .lean();
+  return res.status(200).json({
+    success: true,
+    allRequests,
+  });
+});
 
-    const messagesWithAvatar = await Promise.all(
-      messages.map(async (msg) => {
-        const senderId = msg.sender;
-        const user = await User.findById(senderId).lean();
-        return {
-          ...msg,
-          avatarImage: user.avatarImage,
-        };
-      })
+const getMyFriends = TryCatch(async (req, res) => {
+  const chatId = req.query.chatId;
+
+  const chats = await Chat.find({
+    members: req.user,
+    groupChat: false,
+  }).populate("members", "name avatar");
+
+  const friends = chats.map(({ members }) => {
+    const otherUser = getOtherMember(members, req.user);
+
+    return {
+      _id: otherUser._id,
+      name: otherUser.name,
+      avatar: otherUser.avatar.url,
+    };
+  });
+
+  if (chatId) {
+    const chat = await Chat.findById(chatId);
+
+    const availableFriends = friends.filter(
+      (friend) => !chat.members.includes(friend._id)
     );
 
-    return res.status(200).json({ data: messagesWithAvatar });
-  } catch (err) {
-    return res.status(404).json({ message: err.message });
-  }
-});
-
-// CREATE
-const postUserMessage = asyncHandler(async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { chatId } = req.query;
-    const { message } = req.body;
-
-    if (!userId || !chatId || !message) {
-      return res.status(400).json({ message: "Missing required information." });
-    }
-
-    const newMessage = await Message.create({
-      message,
-      users: [userId, chatId],
-      sender: userId,
-      readers: [],
+    return res.status(200).json({
+      success: true,
+      friends: availableFriends,
     });
-
-    return res.status(200).json({ data: newMessage });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
-
-const postRoom = asyncHandler(async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    const { name, users, avatarImage } = req.body;
-
-    if (!userId || !name || !users || !avatarImage) {
-      return res.status(400).json({ message: "Missing required information." });
-    }
-
-    const data = await Room.create({
-      name,
-      users: [...users, userId],
-      avatarImage,
-      chatType: "room",
+  } else {
+    return res.status(200).json({
+      success: true,
+      friends,
     });
-
-    return res.json({ data, messages: "Successfully created a room." });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
   }
 });
 
-// UPDATE
-const updateMessageReadStatus = asyncHandler(async (req, res) => {
-  try {
-    // chatId 的訊息被 userId 已讀
-    const { userId } = req.params;
-    const { type, chatId } = req.query;
-
-    if (!userId || !type || !chatId) {
-      return res.status(400).json({ message: "Missing required information." });
-    }
-
-    const filter = type === "room" ? [chatId] : [userId, chatId];
-
-    // 撈出所有 chat 中 sender 不是自己的 message
-    const messages = await Message.find({ sender: { $ne: userId } })
-      .all("users", filter)
-      .sort({ createdAt: 1 });
-
-    // 取得 message 和 reader 的對應值
-    const messageReaderMap = messages.reduce((prev, curr) => {
-      return { ...prev, [curr._id.toHexString()]: curr.readers };
-    }, {});
-
-    // 檢查 userId 是否已存在 readers 裡 -> 不存在則新增
-    Object.entries(messageReaderMap).forEach(([key, value]) => {
-      const userHasRead = value.indexOf(userId) > -1;
-      if (!userHasRead) messageReaderMap[key].push(userId); // 還沒已讀就加入
-    });
-
-    // 更新已讀
-    await Promise.all(
-      Object.keys(messageReaderMap).map(async (msgId) => {
-        return await Message.findByIdAndUpdate(
-          { _id: msgId },
-          { readers: messageReaderMap[msgId] },
-          { new: true }
-        ).lean();
-      })
-    );
-
-    return res
-      .status(200)
-      .json({ data: null, message: "Successfully updated." });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-});
-
-module.exports = {
-  getUserContacts,
-  getUserMessages,
-  postUserMessage,
-  postRoom,
-  updateMessageReadStatus,
+export {
+  acceptFriendRequest,
+  getMyFriends,
+  getMyNotifications,
+  getMyProfile,
+  login,
+  logout,
+  newUser,
+  searchUser,
+  sendFriendRequest,
 };

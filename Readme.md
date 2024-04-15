@@ -1,0 +1,1 @@
+### In server folder add your .env file and add all env variables to it like .sampleenv file

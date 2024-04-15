@@ -1,0 +1,38 @@
+```
+└── 📁chatapp-server-master
+    └── .env
+    └── .gitignore
+    └── .sampleenv
+    └── app.js
+    └── 📁constants
+        └── config.js
+        └── events.js
+    └── 📁controllers
+        └── admin.js
+        └── chat.js
+        └── user.js
+    └── 📁lib
+        └── helper.js
+        └── validators.js
+    └── 📁middlewares
+        └── auth.js
+        └── error.js
+        └── multer.js
+    └── 📁models
+        └── chat.js
+        └── message.js
+        └── request.js
+        └── user.js
+    └── package-lock.json
+    └── package.json
+    └── 📁routes
+        └── admin.js
+        └── chat.js
+        └── user.js
+    └── 📁seeders
+        └── chat.js
+        └── user.js
+    └── 📁utils
+        └── features.js
+        └── utility.js
+```

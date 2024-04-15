@@ -1,24 +1,56 @@
-const {
-  getUserContacts,
-  getUserMessages,
-  postUserMessage,
-  updateMessageReadStatus,
-  postRoom
-} = require('../controllers/user')
-const authenticateToken = require('../middleware/authenticateToken')
+import express from "express";
+import {
+  acceptFriendRequest,
+  getMyFriends,
+  getMyNotifications,
+  getMyProfile,
+  login,
+  logout,
+  newUser,
+  searchUser,
+  sendFriendRequest,
+} from "../controllers/user.js";
+import {
+  acceptRequestValidator,
+  loginValidator,
+  registerValidator,
+  sendRequestValidator,
+  validateHandler,
+} from "../lib/validators.js";
+import { isAuthenticated } from "../middlewares/auth.js";
+import { singleAvatar } from "../middlewares/multer.js";
 
-const router = require('express').Router()
-router.use(authenticateToken)
+const app = express.Router();
 
-// READ
-router.get('/:userId/contacts', getUserContacts)
-router.get('/:userId/messages', getUserMessages)
+app.post("/new", singleAvatar, registerValidator(), validateHandler, newUser);
+app.post("/login", loginValidator(), validateHandler, login);
 
-// CREATE
-router.post('/:userId/message', postUserMessage)
-router.post('/:userId/room', postRoom)
+// After here user must be logged in to access the routes
 
-// UPDATE
-router.put('/:userId/messages/status', updateMessageReadStatus)
+app.use(isAuthenticated);
 
-module.exports = router
+app.get("/me", getMyProfile);
+
+app.get("/logout", logout);
+
+app.get("/search", searchUser);
+
+app.put(
+  "/sendrequest",
+  sendRequestValidator(),
+  validateHandler,
+  sendFriendRequest
+);
+
+app.put(
+  "/acceptrequest",
+  acceptRequestValidator(),
+  validateHandler,
+  acceptFriendRequest
+);
+
+app.get("/notifications", getMyNotifications);
+
+app.get("/friends", getMyFriends);
+
+export default app;

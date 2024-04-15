@@ -1,56 +1,80 @@
-import { useEffect } from 'react';
-import { ThemeProvider } from 'styled-components';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { GlobalStyle } from './utils/style';
-import Navbar from './components/Navbar';
-import Home from './pages/Chat/Home';
-import Login from './pages/Login/Login';
-import SignUp from './pages/SignUp/SignUp';
-import Room from './pages/Room/Room';
-import './App.css';
-import ChatContextProvider from './context/ChatContext';
-import { useSocketContext } from './context/SocketContext';
-import { useAuthContext } from './context/AuthContext';
-import { ToastContainer } from 'react-toastify';
-import { socketEmitEvent } from './socket/emit';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectRoute from "./components/auth/ProtectRoute";
+import { LayoutLoader } from "./components/layout/Loaders";
+import axios from "axios";
+import { server } from "./constants/config";
+import { useDispatch, useSelector } from "react-redux";
+import { userExists, userNotExists } from "./redux/reducers/auth";
+import { Toaster } from "react-hot-toast";
+import { SocketProvider } from "./socket";
 
-function App() {
-  const { user } = useAuthContext();
-  const [mode, setMode] = useLocalStorage('chat-app-mode', 'light');
+const Home = lazy(() => import("./pages/Home"));
+const Login = lazy(() => import("./pages/Login"));
+const Chat = lazy(() => import("./pages/Chat"));
+const Groups = lazy(() => import("./pages/Groups"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
-  const {
-    socketConnect,
-    socketValue: { socket, socketId }
-  } = useSocketContext();
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const ChatManagement = lazy(() => import("./pages/admin/ChatManagement"));
+const MessagesManagement = lazy(() =>
+  import("./pages/admin/MessageManagement")
+);
 
-  useEffect(() => {
-    if (user && !socketId) {
-      socketConnect();
-    }
-  }, [user, socketId, socketConnect]);
+const App = () => {
+  const { user, loader } = useSelector((state) => state.auth);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    if (user && socketId) {
-      socketEmitEvent(socket).userOnline(user._id, socketId);
-    }
-  }, [socketId, socket, user]);
+    axios
+      .get(`${server}/api/v1/user/me`, { withCredentials: true })
+      .then(({ data }) => dispatch(userExists(data.user)))
+      .catch((err) => dispatch(userNotExists()));
+  }, [dispatch]);
 
-  return (
-    <ThemeProvider theme={{ mode, setMode }}>
-      <ChatContextProvider>
-        <Navbar />
+  return loader ? (
+    <LayoutLoader />
+  ) : (
+    <BrowserRouter>
+      <Suspense fallback={<LayoutLoader />}>
         <Routes>
-          <Route path="/" element={user ? <Home /> : <Navigate to="/login" replace={true} />} />
-          <Route path="/open-room" element={user ? <Room /> : <Navigate to="/login" replace={true} />} />
-          <Route path="/login" element={user ? <Navigate to="/" replace={true} /> : <Login />} />
-          <Route path="/signup" element={user ? <Navigate to="/" replace={true} /> : <SignUp />} />
+          <Route
+            element={
+              <SocketProvider>
+                <ProtectRoute user={user} />
+              </SocketProvider>
+            }
+          >
+            <Route path="/" element={<Home />} />
+            <Route path="/chat/:chatId" element={<Chat />} />
+            <Route path="/groups" element={<Groups />} />
+          </Route>
+
+          <Route
+            path="/login"
+            element={
+              <ProtectRoute user={!user} redirect="/">
+                <Login />
+              </ProtectRoute>
+            }
+          />
+
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<Dashboard />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/chats" element={<ChatManagement />} />
+          <Route path="/admin/messages" element={<MessagesManagement />} />
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
-        <GlobalStyle />
-        <ToastContainer />
-      </ChatContextProvider>
-    </ThemeProvider>
+      </Suspense>
+
+      <Toaster position="bottom-center" />
+    </BrowserRouter>
   );
-}
+};
 
 export default App;
