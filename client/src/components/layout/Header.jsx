@@ -10,11 +10,15 @@ import {
 } from "@mui/material";
 import React, { Suspense, lazy, useState } from "react";
 import { orange } from "../../constants/color";
+// import study from "../../../public/studdybuddy.jpeg"
+import { IoMdPersonAdd } from "react-icons/io";
+import { MdGroups2 } from "react-icons/md";
+import study from "../../assets/buddystudy.png";
 import {
   Add as AddIcon,
   Menu as MenuIcon,
-  Search as SearchIcon,
-  Group as GroupIcon,
+  // Search as SearchIcon,
+  // Group as GroupIcon,
   Logout as LogoutIcon,
   Notifications as NotificationsIcon,
 } from "@mui/icons-material";
@@ -78,7 +82,7 @@ const Header = () => {
         <AppBar
           position="static"
           sx={{
-            bgcolor: orange,
+            bgcolor: 'black',
           }}
         >
           <Toolbar>
@@ -88,7 +92,7 @@ const Header = () => {
                 display: { xs: "none", sm: "block" },
               }}
             >
-              studdybuddy
+              <img src={study} alt="StuddyBuddy" style={{ width: '145px', height: '50px', marginTop: '5px' }} />
             </Typography>
 
             <Box
@@ -108,7 +112,8 @@ const Header = () => {
             <Box>
               <IconBtn
                 title={"Search"}
-                icon={<SearchIcon />}
+                // icon={<SearchIcon />}
+                icon={<IoMdPersonAdd />}
                 onClick={openSearch}
               />
 
@@ -120,7 +125,8 @@ const Header = () => {
 
               <IconBtn
                 title={"Manage Groups"}
-                icon={<GroupIcon />}
+                // icon={<GroupIcon />}
+                icon={<MdGroups2 />}
                 onClick={navigateToGroup}
               />
 

@@ -33,7 +33,7 @@ const AppLayout = () => (WrappedComponent) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const socket = getSocket();
-
+ 
     const chatId = params.chatId;
     const deleteMenuAnchor = useRef(null);
 

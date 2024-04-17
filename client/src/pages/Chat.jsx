@@ -191,6 +191,7 @@ const Chat = ({ chatId, user }) => {
       <Stack
         ref={containerRef}
         boxSizing={"border-box"}
+        marginLeft={"1rem"}
         padding={"1rem"}
         spacing={"1rem"}
         bgcolor={grayColor}
@@ -264,12 +265,13 @@ const Chat = ({ chatId, user }) => {
             type="submit"
             sx={{
               rotate: "-30deg",
-              bgcolor: orange,
+              bgcolor: "black",
               color: "white",
               marginLeft: "1rem",
               padding: "0.5rem",
               "&:hover": {
-                bgcolor: "error.dark",
+                // bgcolor: "error.dark",
+                bgcolor: "black"
               },
             }}
           >

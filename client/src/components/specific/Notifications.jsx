@@ -54,7 +54,7 @@ const Notifications = () => {
                 />
               ))
             ) : (
-              <Typography textAlign={"center"}>0 notifications</Typography>
+              <Typography textAlign={"center"} color={"gray"}>0 notifications</Typography>
             )}
           </>
         )}
