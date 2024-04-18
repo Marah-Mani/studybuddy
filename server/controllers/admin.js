@@ -18,7 +18,7 @@ const adminLogin = TryCatch(async (req, res, next) => {
 
   return res
     .status(200)
-    .cookie("studdybuddy-admin-token", token, {
+    .cookie("chattu-admin-token", token, {
       ...cookieOptions,
       maxAge: 1000 * 60 * 15,
     })

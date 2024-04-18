@@ -194,7 +194,6 @@ const Chat = ({ chatId, user }) => {
         marginLeft={"1rem"}
         padding={"1rem"}
         spacing={"1rem"}
-        bgcolor={grayColor}
         height={"90%"}
         sx={{
           overflowX: "hidden",
@@ -240,6 +239,7 @@ const Chat = ({ chatId, user }) => {
             sx={{
               position: "absolute",
               left: "-.5rem",
+              marginLeft: ".4rem"
             }}>
             <EmojiEmotionsOutlined />
           </IconButton>

@@ -5,6 +5,7 @@ import {
   DialogTitle,
   ListItem,
   Skeleton,
+  IconButton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -16,6 +17,8 @@ import {
   useGetNotificationsQuery,
 } from "../../redux/api/api";
 import { setIsNotification } from "../../redux/reducers/misc";
+import AddCircleRoundedIcon from '@mui/icons-material/AddCircleRounded';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const Notifications = () => {
   const { isNotification } = useSelector((state) => state.misc);
@@ -37,7 +40,10 @@ const Notifications = () => {
 
   return (
     <Dialog open={isNotification} onClose={closeHandler}>
-      <Stack p={{ xs: "1rem", sm: "2rem" }} maxWidth={"25rem"}>
+      <Stack
+        //  p={{ xs: "1rem", sm: "2rem" }} 
+        p={"0rem 2rem 2rem 2rem"}
+        maxWidth={"25rem"}>
         <DialogTitle>Notifications</DialogTitle>
 
         {isLoading ? (
@@ -66,28 +72,25 @@ const Notifications = () => {
 const NotificationItem = memo(({ sender, _id, handler }) => {
   const { name, avatar } = sender;
   return (
-    <ListItem>
+    <ListItem dir="column">
       <Stack
         direction={"row"}
         alignItems={"center"}
         spacing={"1rem"}
         width={"100%"}
       >
-        <Avatar />
+        <Avatar src={avatar} alt={name} />
 
         <Typography
-          variant="body1"
           sx={{
             flexGlow: 1,
             display: "-webkit-box",
-            WebkitLineClamp: 1,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            width: "100%",
           }}
         >
-          {`${name} sent you a friend request.`}
+          <strong>{name + " "}</strong> sent you a friend request.
         </Typography>
 
         <Stack
@@ -96,10 +99,8 @@ const NotificationItem = memo(({ sender, _id, handler }) => {
             sm: "row",
           }}
         >
-          <Button onClick={() => handler({ _id, accept: true })}>Accept</Button>
-          <Button color="error" onClick={() => handler({ _id, accept: false })}>
-            Reject
-          </Button>
+          <IconButton onClick={() => handler({ _id, accept: true })}> <AddCircleRoundedIcon /></IconButton>
+          <IconButton color="error" onClick={() => handler({ _id, accept: false })}><CancelIcon /></IconButton>
         </Stack>
       </Stack>
     </ListItem>
