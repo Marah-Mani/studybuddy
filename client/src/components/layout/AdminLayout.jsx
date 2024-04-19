@@ -43,11 +43,7 @@ const adminTabs = [
     path: "/admin/users",
     icon: <ManageAccountsIcon />,
   },
-  {
-    name: "Chats",
-    path: "/admin/chats",
-    icon: <GroupsIcon />,
-  },
+ 
   {
     name: "Messages",
     path: "/admin/messages",
