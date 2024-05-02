@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "frontend": "cd ../chatapp-frontend-master && npm run dev",
+    "serve": "concurrently   \"npm run dev\" \"npm run frontend\" "
   },
   "keywords": [],
   "author": "",

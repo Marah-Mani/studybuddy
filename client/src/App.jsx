@@ -8,8 +8,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { userExists, userNotExists } from "./redux/reducers/auth";
 import { Toaster } from "react-hot-toast";
 import { SocketProvider } from "./socket";
+import Market from "./pages/Marketplace/Market";
 
-const Home = lazy(() => import("./pages/Home"));
+const Home = lazy(() => import("./pages/Home"))
+const ChatHome = lazy(() => import("./pages/ChatHome"));
 const Login = lazy(() => import("./pages/Login"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Groups = lazy(() => import("./pages/Groups"));
@@ -48,10 +50,16 @@ const App = () => {
               </SocketProvider>
             }
           >
-            <Route path="/" element={<Home />} />
+            <Route path="/chat-home" element={<ChatHome />} />
             <Route path="/chat/:chatId" element={<Chat />} />
             <Route path="/groups" element={<Groups />} />
+            <Route path="/market" element={<Market />} />
+            <Route
+              path="/"
+              element={<Home />}
+            />
           </Route>
+
 
           <Route
             path="/login"

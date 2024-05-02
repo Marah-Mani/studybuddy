@@ -3,16 +3,20 @@ import {
   Backdrop,
   Badge,
   Box,
+  Drawer,
+  Avatar,
   IconButton,
   Toolbar,
   Tooltip,
   Typography,
 } from "@mui/material";
+import { DrawerList as DL } from "../shared/DrawerItems"
 import React, { Suspense, lazy, useState } from "react";
 import { orange } from "../../constants/color";
 // import study from "../../../public/studdybuddy.jpeg"
-import { IoMdPersonAdd } from "react-icons/io";
+import { IoIosChatbubbles, IoMdPersonAdd } from "react-icons/io";
 import { MdGroups2 } from "react-icons/md";
+import { FaStore } from "react-icons/fa";
 import study from "../../assets/buddystudy.png";
 import {
   Add as AddIcon,
@@ -44,6 +48,12 @@ const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const [open, setOpen] = React.useState(false);
+
+  const toggleDrawer = (newOpen) => () => {
+    setOpen(newOpen);
+  };
+
   const { isSearch, isNotification, isNewGroup } = useSelector(
     (state) => state.misc
   );
@@ -62,7 +72,16 @@ const Header = () => {
     dispatch(resetNotificationCount());
   };
 
-  const navigateToGroup = () => navigate("/groups");
+  const { user } = useSelector((state) => state.auth);
+
+  const gotoMarketplace = () => navigate("/market");
+  const openChatHome = () => navigate("/chat-home");
+  // const navigateToGroup = () => navigate("/groups");
+
+  // const openProfile = () => {
+    // toggleDrawer(true)
+  // }
+
 
   const logoutHandler = async () => {
     try {
@@ -71,6 +90,7 @@ const Header = () => {
       });
       dispatch(userNotExists());
       toast.success(data.message);
+      navigate("/login")
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong");
     }
@@ -111,12 +131,26 @@ const Header = () => {
             />
             <Box>
               <IconBtn
-                title={"Search"}
-                // icon={<SearchIcon />}
-                icon={<IoMdPersonAdd />}
-                onClick={openSearch}
+                title={"Marketplace"}
+                icon={<FaStore />}
+                onClick={gotoMarketplace}
               />
-
+              <IconBtn
+                title={"Chat"}
+                icon={<IoIosChatbubbles />}
+                onClick={openChatHome}
+              />
+              <IconBtn
+                title={"Profile"}
+                icon={<Avatar src={user?.avatar?.url} />}
+                // onClick={openSearch}
+                onClick={toggleDrawer(true)}
+              />
+              <Drawer open={open} anchor="right" onClose={toggleDrawer(false)}>
+                <DL toggleDrawer={toggleDrawer} />
+              </Drawer>
+           
+ {/* 
               <IconBtn
                 title={"New Group"}
                 icon={<AddIcon />}
@@ -128,7 +162,7 @@ const Header = () => {
                 // icon={<GroupIcon />}
                 icon={<MdGroups2 />}
                 onClick={navigateToGroup}
-              />
+              /> */}
 
               <IconBtn
                 title={"Notifications"}

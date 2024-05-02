@@ -1,15 +1,27 @@
-import AppLayout from "../components/layout/AppLayout";
-import { Box, Typography } from "@mui/material";
-import { grayColor } from "../constants/color";
+import React from 'react'
+import AppLayout from '../components/layout/AppLayout'
+import Header from '../components/layout/Header';
+import { Typography } from '@mui/material';
 
-const Home = () => {
-  return (
-    <Box bgcolor={grayColor} display={"flex"} justifyContent={"center"} alignItems={"center"} height={"100%"}>
-      <Typography  variant="h6" sx={{ color: 'gray' }}  textAlign={"center"}>
-        Select a friend to chat
-      </Typography>
-    </Box>
-  );
-};
+function Home() {
+    return (
+        <>
+            <Header />
+            <Typography
+                variant="h1"
+                sx={{
+                    fontSize: { xs: "2rem", sm: "3rem" },
+                    display:"flex",
+                    justifyContent:"center",
+                    alignItems:"center",
+                    height:"93vh",
+                    width:"100%",
+                }}
+            >
+                Welcome to studdybuddy!
+            </Typography>
+        </>
+    )
+}
 
-export default AppLayout()(Home);
+export default Home;
