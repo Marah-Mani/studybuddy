@@ -11,14 +11,14 @@ function Home() {
                 variant="h1"
                 sx={{
                     fontSize: { xs: "2rem", sm: "3rem" },
-                    display:"flex",
-                    justifyContent:"center",
-                    alignItems:"center",
-                    height:"93vh",
-                    width:"100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "93vh",
+                    width: "100%",
                 }}
             >
-                Welcome to studdybuddy!
+                Welcome to Study Buddy
             </Typography>
         </>
     )

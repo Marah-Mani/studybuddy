@@ -13,9 +13,9 @@ import {
 import { DrawerList as DL } from "../shared/DrawerItems"
 import React, { Suspense, lazy, useState } from "react";
 import { orange } from "../../constants/color";
-// import study from "../../../public/studdybuddy.jpeg"
 import { IoIosChatbubbles, IoMdPersonAdd } from "react-icons/io";
 import { MdGroups2 } from "react-icons/md";
+import { Link } from 'react-router-dom'; // Import Link component for routing
 import { FaStore } from "react-icons/fa";
 import study from "../../assets/buddystudy.png";
 import {
@@ -26,7 +26,7 @@ import {
   Logout as LogoutIcon,
   Notifications as NotificationsIcon,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { server } from "../../constants/config";
 import toast from "react-hot-toast";
@@ -46,6 +46,7 @@ const NewGroupDialog = lazy(() => import("../specific/NewGroup"));
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
   const [open, setOpen] = React.useState(false);
@@ -74,13 +75,16 @@ const Header = () => {
 
   const { user } = useSelector((state) => state.auth);
 
-  const gotoMarketplace = () => navigate("/market");
-  const openChatHome = () => navigate("/chat-home");
-  // const navigateToGroup = () => navigate("/groups");
+  const gotoMarketplace = () => {
+    if (location.pathname === "/market") {
 
-  // const openProfile = () => {
-    // toggleDrawer(true)
-  // }
+      window.location.reload();
+    }
+    else {
+      navigate("/market")
+    }
+  };
+  const openChatHome = () => navigate("/chat-home");
 
 
   const logoutHandler = async () => {
@@ -106,14 +110,17 @@ const Header = () => {
           }}
         >
           <Toolbar>
-            <Typography
-              variant="h6"
-              sx={{
-                display: { xs: "none", sm: "block" },
-              }}
-            >
-              <img src={study} alt="StuddyBuddy" style={{ width: '145px', height: '50px', marginTop: '5px' }} />
-            </Typography>
+
+
+            <Link to="/">
+              <Typography variant="h6" sx={{ display: { xs: "none", sm: "block" } }}>
+                <img
+                  src={study}
+                  alt="StuddyBuddy"
+                  style={{ width: "145px", height: "50px", marginTop: "5px" }}
+                />
+              </Typography>
+            </Link>
 
             <Box
               sx={{
@@ -149,8 +156,8 @@ const Header = () => {
               <Drawer open={open} anchor="right" onClose={toggleDrawer(false)}>
                 <DL toggleDrawer={toggleDrawer} />
               </Drawer>
-           
- {/* 
+
+              {/* 
               <IconBtn
                 title={"New Group"}
                 icon={<AddIcon />}

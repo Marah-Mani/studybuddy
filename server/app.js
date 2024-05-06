@@ -25,6 +25,7 @@ import { socketAuthenticator } from "./middlewares/auth.js";
 import userRoute from "./routes/user.js";
 import chatRoute from "./routes/chat.js";
 import adminRoute from "./routes/admin.js";
+import postRoute from "./routes/post.js"
 
 dotenv.config({
   path: "./.env",
@@ -54,13 +55,17 @@ const io = new Server(server, {
 app.set("io", io);
 
 // Using Middlewares Here
+
+app.use(express.json({ limit: '15mb' }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
 
+
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/chat", chatRoute);
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/post", postRoute);
 
 app.get("/", (req, res) => {
   res.send("Hello World");

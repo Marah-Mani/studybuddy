@@ -407,6 +407,20 @@ const getMessages = TryCatch(async (req, res, next) => {
   });
 });
 
+const BypassNewChat = TryCatch(async (req, res) => {
+  console.log("Controller");
+  const { name, members } = req.body;
+  const chat = await Chat.create({
+    name: name,
+    members: members,
+  })
+  console.log('Chat Created', chat);
+  return res.status(200).json({
+    success: true,
+    chatId: chat._id.toString(),
+  })
+})
+
 export {
   newGroupChat,
   getMyChats,
@@ -419,4 +433,5 @@ export {
   renameGroup,
   deleteChat,
   getMessages,
+  BypassNewChat,
 };

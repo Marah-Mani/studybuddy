@@ -144,21 +144,6 @@ const AppLayout = () => (WrappedComponent) => {
             <WrappedComponent {...props} chatId={chatId} user={user} />
           </Grid>
 
-          {/* <Grid
-            item
-            // md={4}
-            // lg={3}
-            width={"5rem"}
-            // height={"100%"}
-            sx={{
-              display: { xs: "none", md: "block" },
-              padding: "2rem",
-              bgcolor: "rgba(0,0,0,0.85)",
-            }}
-          >
-            {/* <Profile user={user} /> 
-            <ChatRightMenu />
-          </Grid>  */}
 
           <Grid
             item

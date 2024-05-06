@@ -1,5 +1,6 @@
 import { body, param, validationResult } from "express-validator";
 import { ErrorHandler } from "../utils/utility.js";
+import { Chat } from "../models/chat.js";
 
 const validateHandler = (req, res, next) => {
   const errors = validationResult(req);
@@ -76,6 +77,70 @@ const adminLoginValidator = () => [
   body("secretKey", "Please Enter Secret Key").notEmpty(),
 ];
 
+const PostValidator = (req, res, next) => {
+  const { title, description, image, user, category } = req.body;
+  if (!title || !description || !user || !category) {
+    return res.status(400).json({
+      success: false,
+      message: "Please Enter Title, Description and User",
+    });
+  }
+  if (image.length > 5) {
+    return res.status(400).json({
+      success: false,
+      message: "Max 5 images are allowed",
+    })
+  }
+  if (image.length < 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Please Enter Image",
+    })
+  }
+  next();
+}
+
+const BypassChatValidator = async (req, res, next) => {
+  console.log("BypassChatValidator");
+  const { name, members } = req.body;
+  if (!name || !members) {
+    return res.status(400).json({
+      success: false,
+      message: "Please Enter Name and Members",
+    });
+  }
+
+
+  if (members[0].toString() === members[1].toString()) {
+    return res.status(400).json({
+      success: false,
+      message: "You cannot add same user in a chat",
+    });
+  }
+  if (members.length < 2) {
+    return res.status(400).json({
+      success: false,
+      message: "Chat must have at least 2 members",
+    })
+  }
+  const query = {
+    $and: [
+      { members: { $size: 2 } }, // Ensures there are exactly 2 members
+      { members: { $all: members } }, // Ensures both specified IDs are present
+    ],
+  };
+  const chat = await Chat.findOne(query);
+  console.log(chat);
+  if (chat === null) {
+    next();
+  } else {
+    return res.status(200).json({
+      success: true,
+      chatId: chat._id.toString(),
+    })
+  }
+}
+
 export {
   acceptRequestValidator,
   addMemberValidator,
@@ -89,4 +154,6 @@ export {
   sendAttachmentsValidator,
   sendRequestValidator,
   validateHandler,
+  PostValidator,
+  BypassChatValidator,
 };

@@ -47,7 +47,6 @@ function ChatRightMenu() {
             title={"New Group"}
             icon={<MdGroups2 />}
             onClick={openNewGroup}
-             
             />
         </Stack>
     )

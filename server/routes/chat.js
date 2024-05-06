@@ -6,7 +6,7 @@ import {
   getMessages,
   getMyChats,
   getMyGroups,
-  leaveGroup, 
+  leaveGroup,
   newGroupChat,
   removeMember,
   renameGroup,
@@ -20,6 +20,7 @@ import {
   renameValidator,
   sendAttachmentsValidator,
   validateHandler,
+  BypassChatValidator,
 } from "../lib/validators.js";
 import { isAuthenticated } from "../middlewares/auth.js";
 import { attachmentsMulter } from "../middlewares/multer.js";
@@ -65,5 +66,8 @@ app
   .get(chatIdValidator(), validateHandler, getChatDetails)
   .put(renameValidator(), validateHandler, renameGroup)
   .delete(chatIdValidator(), validateHandler, deleteChat);
+
+  //Bypass Route
+
 
 export default app;
